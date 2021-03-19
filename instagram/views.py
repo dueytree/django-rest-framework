@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.decorators import api_view, action
@@ -7,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from .serializers import PostSerializer
 from .models import Post
+from instagram.permissions import IsAuthorOrReadonly
 
 
 # class PublicPostListAPIView(generics.ListAPIView):
@@ -28,18 +30,22 @@ from .models import Post
 #     return Response(serializer.data)
 
 
-
-
 class PostViewSet(ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    # authentication_classes = [] # 인증 됨을 보장
+    permission_classes = [IsAuthenticated, IsAuthorOrReadonly]
+
+    def perform_create(self, serializer):
+        author = self.request.user  # User or AnonymousUser
+        ip = self.request.META['REMOTE_ADDR']
+        serializer.save(author=author, ip=ip)
 
     @action(detail=False, methods=['GET'])
     def public(self, request):
         qs = self.get_queryset().filter(is_public=True)
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
-
 
     @action(detail=True, methods=['PATCH'])
     def set_public(self, request, pk):
@@ -51,9 +57,9 @@ class PostViewSet(ModelViewSet):
 
 
 # def dispatch(self, request, *args, **kwargs):
-    #     print("request.body :", request.body)   # print 비추천, logger 추
-    #     print("request.POST :", request.POST)
-    #     return super().dispatch(request, *args, **kwargs)
+#     print("request.body :", request.body)   # print 비추천, logger 추
+#     print("request.POST :", request.POST)
+#     return super().dispatch(request, *args, **kwargs)
 
 
 # def post_list(request):
