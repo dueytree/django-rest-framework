@@ -4,11 +4,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.decorators import api_view, action
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from .serializers import PostSerializer
 from .models import Post
 from instagram.permissions import IsAuthorOrReadonly
+
 
 
 # class PublicPostListAPIView(generics.ListAPIView):
@@ -35,6 +37,9 @@ class PostViewSet(ModelViewSet):
     serializer_class = PostSerializer
     # authentication_classes = [] # 인증 됨을 보장
     permission_classes = [IsAuthenticated, IsAuthorOrReadonly]
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['^message']
+
 
     def perform_create(self, serializer):
         author = self.request.user  # User or AnonymousUser
